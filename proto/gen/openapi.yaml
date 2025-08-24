@@ -2498,7 +2498,10 @@ components:
                     description: Required. The tag name to delete.
                 deleteRelatedMemos:
                     type: boolean
-                    description: Optional. Whether to delete related memos.
+                    description: |-
+                        Optional. Whether to delete related memos entirely.
+                         If true: delete the entire memo
+                         If false: only remove the tag from memo content (default)
         EmbeddedContentNode:
             type: object
             properties:
@@ -2534,8 +2537,6 @@ components:
                 logoUrl:
                     type: string
                 locale:
-                    type: string
-                appearance:
                     type: string
             description: Custom profile configuration for workspace branding.
         GetCurrentSessionResponse:
@@ -3772,9 +3773,6 @@ components:
                 locale:
                     type: string
                     description: The preferred locale of the user.
-                appearance:
-                    type: string
-                    description: The preferred appearance of the user.
                 memoVisibility:
                     type: string
                     description: The default visibility of the memo.

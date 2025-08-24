@@ -279,7 +279,11 @@ export interface DeleteMemoTagRequest {
   parent: string;
   /** Required. The tag name to delete. */
   tag: string;
-  /** Optional. Whether to delete related memos. */
+  /**
+   * Optional. Whether to delete related memos entirely.
+   * If true: delete the entire memo
+   * If false: only remove the tag from memo content (default)
+   */
   deleteRelatedMemos: boolean;
 }
 

@@ -306,7 +306,6 @@ func (s *APIV1Service) DeleteUser(ctx context.Context, request *v1pb.DeleteUserR
 func getDefaultUserGeneralSetting() *v1pb.UserSetting_GeneralSetting {
 	return &v1pb.UserSetting_GeneralSetting{
 		Locale:         "en",
-		Appearance:     "system",
 		MemoVisibility: "PRIVATE",
 		Theme:          "",
 	}
@@ -373,39 +372,33 @@ func (s *APIV1Service) UpdateUserSetting(ctx context.Context, request *v1pb.Upda
 		return nil, status.Errorf(codes.InvalidArgument, "invalid setting key: %v", err)
 	}
 
-	// get existing user setting
-	existingUserSetting, err := s.Store.GetUserSetting(ctx, &store.FindUserSetting{
-		UserID: &userID,
-		Key:    storeKey,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if existingUserSetting == nil {
-		return nil, status.Errorf(codes.NotFound, "%s not found", storeKey.String())
-	}
-
 	// Only GENERAL settings are supported via UpdateUserSetting
 	// Other setting types have dedicated service methods
 	if storeKey != storepb.UserSetting_GENERAL {
 		return nil, status.Errorf(codes.InvalidArgument, "setting type %s should not be updated via UpdateUserSetting", storeKey.String())
 	}
 
-	// Start with existing general setting values
-	existingGeneral := existingUserSetting.GetGeneral()
+	existingUserSetting, _ := s.Store.GetUserSetting(ctx, &store.FindUserSetting{
+		UserID: &userID,
+		Key:    storeKey,
+	})
+
+	generalSetting := &storepb.GeneralUserSetting{}
+	if existingUserSetting != nil {
+		// Start with existing general setting values
+		generalSetting = existingUserSetting.GetGeneral()
+	}
+
 	updatedGeneral := &v1pb.UserSetting_GeneralSetting{
-		Appearance:     existingGeneral.GetAppearance(),
-		MemoVisibility: existingGeneral.GetMemoVisibility(),
-		Locale:         existingGeneral.GetLocale(),
-		Theme:          existingGeneral.GetTheme(),
+		MemoVisibility: generalSetting.GetMemoVisibility(),
+		Locale:         generalSetting.GetLocale(),
+		Theme:          generalSetting.GetTheme(),
 	}
 
 	// Apply updates for fields specified in the update mask
 	incomingGeneral := request.Setting.GetGeneralSetting()
 	for _, field := range request.UpdateMask.Paths {
 		switch field {
-		case "appearance":
-			updatedGeneral.Appearance = incomingGeneral.Appearance
 		case "memoVisibility":
 			updatedGeneral.MemoVisibility = incomingGeneral.MemoVisibility
 		case "theme":
@@ -1165,7 +1158,6 @@ func convertUserSettingFromStore(storeSetting *storepb.UserSetting, userID int32
 			setting.Value = &v1pb.UserSetting_GeneralSetting_{
 				GeneralSetting: &v1pb.UserSetting_GeneralSetting{
 					Locale:         general.Locale,
-					Appearance:     general.Appearance,
 					MemoVisibility: general.MemoVisibility,
 					Theme:          general.Theme,
 				},
@@ -1249,7 +1241,6 @@ func convertUserSettingToStore(apiSetting *v1pb.UserSetting, userID int32, key s
 			storeSetting.Value = &storepb.UserSetting_General{
 				General: &storepb.GeneralUserSetting{
 					Locale:         general.Locale,
-					Appearance:     general.Appearance,
 					MemoVisibility: general.MemoVisibility,
 					Theme:          general.Theme,
 				},
